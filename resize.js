@@ -55,14 +55,14 @@ Resize.prototype.compileWidthResize = function () {
 	var currentPosition = 0;";
 	for (var line = 0; line < heightOrigMulChannels; ++line) {
 		toCompile += "\
-	var output" + line + " = 0;"
+	var output" + line + " = 0;";
 	}
 	toCompile += "\
 	do {\
 		weight = ratioWeight;";
 	for (line = 0; line < heightOrigMulChannels; ++line) {
 		toCompile += "\
-		output" + line + " = 0;"
+		output" + line + " = 0;";
 	}
 	toCompile += "\
 		while (weight > 0 && actualPosition < " + widthOrigMulChannels + ") {\
@@ -71,7 +71,9 @@ Resize.prototype.compileWidthResize = function () {
 	for (pixelOffset = line = 0; line < heightOrigMulChannels; pixelOffset += widthOrigMulChannels) {
 		temp_var = pixelOffset;
 		toCompile += "\
-				output" + (line++) + " += buffer[actualPosition + " + (temp_var++) + "] * amountToNext;\
+				output" + (line++) + " += buffer[actualPosition" + ((temp_var > 0) ? (" + " + temp_var) : "") + "] * amountToNext;";
+		++temp_var;		
+		toCompile += "\
 				output" + (line++) + " += buffer[actualPosition + " + (temp_var++) + "] * amountToNext;\
 				output" + (line++) + " += buffer[actualPosition + " + (temp_var++) + "] * amountToNext;\
 				output" + (line++) + " += buffer[actualPosition + " + temp_var + "] * amountToNext;";
@@ -84,7 +86,9 @@ Resize.prototype.compileWidthResize = function () {
 	for (pixelOffset = line = 0; line < heightOrigMulChannels; pixelOffset += widthOrigMulChannels) {
 		temp_var = pixelOffset;
 		toCompile += "\
-				output" + (line++) + " += buffer[actualPosition + " + (temp_var++) + "] * weight;\
+				output" + (line++) + " += buffer[actualPosition" + ((temp_var > 0) ? (" + " + temp_var) : "") + "] * weight;";
+		++temp_var;		
+		toCompile += "\
 				output" + (line++) + " += buffer[actualPosition + " + (temp_var++) + "] * weight;\
 				output" + (line++) + " += buffer[actualPosition + " + (temp_var++) + "] * weight;\
 				output" + (line++) + " += buffer[actualPosition + " + temp_var + "] * weight;";
@@ -97,7 +101,9 @@ Resize.prototype.compileWidthResize = function () {
 	for (pixelOffset = line = 0; line < heightOrigMulChannels; pixelOffset += widthTargetMulChannels) {
 		temp_var = pixelOffset;
 		toCompile += "\
-		outputBuffer[outputOffset + " + (temp_var++) + "] = output" + (line++) + " / ratioWeight;\
+		outputBuffer[outputOffset" + ((temp_var > 0) ? (" + " + temp_var) : "") + "] = output" + (line++) + " / ratioWeight;";
+		++temp_var;
+		toCompile += "\
 		outputBuffer[outputOffset + " + (temp_var++) + "] = output" + (line++) + " / ratioWeight;\
 		outputBuffer[outputOffset + " + (temp_var++) + "] = output" + (line++) + " / ratioWeight;\
 		outputBuffer[outputOffset + " + temp_var + "] = output" + (line++) + " / ratioWeight;";
@@ -120,18 +126,17 @@ Resize.prototype.compileHeightResize = function () {
 	var amountToNext = 0;\
 	var outputBuffer = this.heightBuffer;\
 	var outputOffset = 0;\
-	var lastRowBegin = 0;\
 	var currentPosition = 0;";
 	for (var pixelOffset = 0; pixelOffset < targetWidthMul; ++pixelOffset) {
 		toCompile += "\
-	var output" + pixelOffset + " = 0;"
+	var output" + pixelOffset + " = 0;";
 	}
 	toCompile += "\
 	do {\
 		weight = ratioWeight;";
 	for (pixelOffset = 0; pixelOffset < targetWidthMul; ++pixelOffset) {
 		toCompile += "\
-		output" + pixelOffset + " = 0;"
+		output" + pixelOffset + " = 0;";
 	}
 	toCompile += "\
 		while (weight > 0 && actualPosition < " + totalPrevChannels + ") {\
@@ -139,7 +144,7 @@ Resize.prototype.compileHeightResize = function () {
 			if (weight >= amountToNext) {";
 	for (pixelOffset = 0; pixelOffset < targetWidthMul; ++pixelOffset) {
 		toCompile += "\
-				output" + pixelOffset + " += buffer[actualPosition++] * amountToNext;"
+				output" + pixelOffset + " += buffer[actualPosition++] * amountToNext;";
 	}
 	toCompile += "\
 				currentPosition = actualPosition;\
@@ -148,7 +153,7 @@ Resize.prototype.compileHeightResize = function () {
 			else {";
 	for (pixelOffset = 0; pixelOffset < targetWidthMul; ++pixelOffset) {
 		toCompile += "\
-				output" + pixelOffset + " += buffer[actualPosition" + ((pixelOffset > 0) ? (" + " + pixelOffset) : "") + "] * weight;"
+				output" + pixelOffset + " += buffer[actualPosition" + ((pixelOffset > 0) ? (" + " + pixelOffset) : "") + "] * weight;";
 	}
 	toCompile += "\
 				currentPosition += weight;\
@@ -157,7 +162,7 @@ Resize.prototype.compileHeightResize = function () {
 		}";
 	for (pixelOffset = 0; pixelOffset < targetWidthMul; ++pixelOffset) {
 		toCompile += "\
-		outputBuffer[outputOffset++] = output" + pixelOffset + " / ratioWeight;"
+		outputBuffer[outputOffset++] = output" + pixelOffset + " / ratioWeight;";
 	}
 	toCompile += "\
 	} while (outputOffset < " + totalChannels + ");\
@@ -174,18 +179,28 @@ Resize.prototype.bypassResampler = function (buffer) {
 Resize.prototype.initializeFirstPassBuffer = function () {
 	//Initialize the internal width pass buffer:
 	try {
-		this.widthBuffer = new Float32Array(this.targetWidth * this.heightOriginal * 4);
+		this.widthBuffer = new Float16Array(this.targetWidth * this.heightOriginal * 4);
 	}
 	catch (error) {
-		this.widthBuffer = [];
+		try {
+			this.widthBuffer = new Float32Array(this.targetWidth * this.heightOriginal * 4);
+		}
+		catch (error) {
+			this.widthBuffer = [];
+		}
 	}
 }
 Resize.prototype.initializeSecondPassBuffer = function () {
 	//Initialize the internal buffer:
 	try {
-		this.heightBuffer = new Float32Array(this.targetWidth * this.targetHeight * 4);
+		this.heightBuffer = new Float16Array(this.targetWidth * this.targetHeight * 4);
 	}
 	catch (error) {
-		this.heightBuffer = [];
+		try {
+			this.heightBuffer = new Float32Array(this.targetWidth * this.targetHeight * 4);
+		}
+		catch (error) {
+			this.heightBuffer = [];
+		}
 	}
 }
