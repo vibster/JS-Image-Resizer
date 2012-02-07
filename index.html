@@ -5,6 +5,7 @@
 		<script src="./resize.js"></script>
 	</head>
 	<body>
+		<span id="wait">Please wait while the demo downloads html5_logo.bmp...</span>
 		<canvas id ="test" width="500" height="500"></canvas>
 		<script>
 			var resizeObj = new Resize(1200, 1689, 500, 500);
@@ -16,6 +17,7 @@
 			}
 			function updateCanvas() {
 				if (ajaxReq.readyState >= 4 && ajaxReq.responseText.length) {
+					document.getElementById("wait").style.display = "none";
 					var data = ajaxReq.responseText;
 					var dataPos = data.length - 1689 * 1200 * 3;
 					var yAdj = 1688 * 4800;
