@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<script src="./resize.js"></script>
+	</head>
+	<body>
+		<canvas id ="test" width="500" height="500"></canvas>
+		<script>
+			var resizeObj = new Resize(1200, 1689, 500, 500);
+			try {
+				var framebuffer = new Int32Array(1689 * 1200 * 4);
+			}
+			catch (error) {
+				var framebuffer = [];
+			}
+			function updateCanvas() {
+				if (ajaxReq.readyState >= 4 && ajaxReq.responseText.length) {
+					var data = ajaxReq.responseText;
+					var dataPos = data.length - 1689 * 1200 * 3;
+					var yAdj = 1688 * 4800;
+					for (var y = 0; yAdj >= 0; yAdj -= 4800) {
+						for (var x = 0; x < 4800;) {
+							framebuffer[yAdj + 2 + (x++)] = data.charCodeAt(dataPos++) & 0xFF;
+							framebuffer[yAdj + (x++)] = data.charCodeAt(dataPos++) & 0xFF;
+							framebuffer[yAdj - 2 + (x++)] = data.charCodeAt(dataPos++) & 0xFF;
+							framebuffer[yAdj + (x++)] = 0xFF;
+						}
+					}
+					var canvasHandle = document.getElementById("test");
+					var contextHandle = canvasHandle.getContext("2d");
+					var imageData = contextHandle.getImageData(0, 0, 500, 500);
+					var result = resizeObj.resize(framebuffer);
+					data = imageData.data;
+					for (x = 0, y = framebuffer.length; x < y; ++x) {
+						data[x] = result[x] & 0xFF;
+					}
+					contextHandle.putImageData(imageData, 0, 0);
+				}
+			}
+			var ajaxReq = new XMLHttpRequest();
+			ajaxReq.onreadystatechange = updateCanvas;
+			ajaxReq.open("GET", "./html5_logo.bmp", true);
+			ajaxReq.setRequestHeader("Content-Type", "application/octet-stream");
+			try {
+				ajaxReq.overrideMimeType('text/plain; charset=x-user-defined'); 
+			}
+			catch (error) {
+				//No support...
+			}
+			ajaxReq.send();
+		</script>
+	</body>
+</html>
