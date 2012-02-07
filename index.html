@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title></title>
+		<title>Resize RGBA data from a BMP image and post-manipulation</title>
 		<script src="./resize.js"></script>
 	</head>
-	<body>
+	<body onload="onloadHandle();">
 		<span id="wait">Please wait while the demo downloads html5_logo.bmp...</span>
 		<canvas id ="test" width="500" height="500"></canvas>
 		<script>
@@ -15,7 +15,7 @@
 			catch (error) {
 				var framebuffer = [];
 			}
-			function updateCanvas() {
+			function decodeBMP() {
 				if (ajaxReq.readyState >= 4 && ajaxReq.responseText.length) {
 					document.getElementById("wait").style.display = "none";
 					var data = ajaxReq.responseText;
@@ -29,28 +29,47 @@
 							framebuffer[yAdj + (x++)] = 0xFF;
 						}
 					}
-					var canvasHandle = document.getElementById("test");
-					var contextHandle = canvasHandle.getContext("2d");
-					var imageData = contextHandle.getImageData(0, 0, 500, 500);
-					var result = resizeObj.resize(framebuffer);
-					data = imageData.data;
-					for (x = 0, y = framebuffer.length; x < y; ++x) {
-						data[x] = result[x] & 0xFF;
-					}
-					contextHandle.putImageData(imageData, 0, 0);
+					framebuffer = resizeObj.resize(framebuffer);
+					updateCanvas();
+					setInterval(colorifyImage, 30);
 				}
 			}
-			var ajaxReq = new XMLHttpRequest();
-			ajaxReq.onreadystatechange = updateCanvas;
-			ajaxReq.open("GET", "./html5_logo.bmp", true);
-			ajaxReq.setRequestHeader("Content-Type", "application/octet-stream");
-			try {
-				ajaxReq.overrideMimeType('text/plain; charset=x-user-defined'); 
+			function updateCanvas() {
+				var data = imageData.data;
+				var length = data.length;
+				for (var x = 0; x < length; ++x) {
+					data[x] = framebuffer[x] & 0xFF;
+				}
+				contextHandle.putImageData(imageData, 0, 0);
 			}
-			catch (error) {
-				//No support...
+			function colorifyImage() {
+				var length = framebuffer.length;
+				for (var x = 0; x < length; x += 4) {
+					if ((framebuffer[x] & framebuffer[x + 1] & framebuffer[x + 2]) >= 0xFC || framebuffer[x + 3] == 0xFE) {
+						framebuffer[x] = Math.round(Math.random() * 0xFF);
+						framebuffer[x + 1] = Math.round(Math.random() * 0xFF);
+						framebuffer[x + 2] = Math.round(Math.random() * 0xFF);
+						framebuffer[x + 3] = 0xFE;
+					}
+				}
+				updateCanvas();
 			}
-			ajaxReq.send();
+			function onloadHandle() {
+				ajaxReq = new XMLHttpRequest();
+				ajaxReq.onreadystatechange = decodeBMP;
+				ajaxReq.open("GET", "./html5_logo.bmp", true);
+				ajaxReq.setRequestHeader("Content-Type", "application/octet-stream");
+				try {
+					ajaxReq.overrideMimeType('text/plain; charset=x-user-defined'); 
+				}
+				catch (error) {
+					//No support...
+				}
+				ajaxReq.send();
+				canvasHandle = document.getElementById("test");
+				contextHandle = canvasHandle.getContext("2d");
+				imageData = contextHandle.getImageData(0, 0, 500, 500);
+			}
 		</script>
 	</body>
 </html>
