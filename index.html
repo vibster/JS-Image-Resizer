@@ -51,6 +51,13 @@
 				elementHandle.height = 1000;
 				resized = new Resize(source.width, source.height, 1000, 1000, true, true)
 				updateCanvas(contextHandle, contextHandle.createImageData(1000, 1000), resized.resize(dataToScale));
+				//up_resize_crisp
+				elementHandle = document.getElementById("up_resize_crisp");
+				contextHandle = elementHandle.getContext("2d");
+				elementHandle.width = 1000;
+				elementHandle.height = 1000;
+				resized = new Resize(source.width, source.height, 1000, 1000, true, false)
+				updateCanvas(contextHandle, contextHandle.createImageData(1000, 1000), resized.resize(dataToScale));
 			}
 			function updateCanvas(contextHandle, imageBuffer, frameBuffer) {
 				var data = imageBuffer.data;
@@ -79,6 +86,9 @@
 		<br>
 		<h3>Upscaling With Resize.js:</h3>
 		<canvas id="up_resize"></canvas>
+		<br>
+		<h3>Upscaling With Resize.js (Crisp):</h3>
+		<canvas id="up_resize_crisp"></canvas>
 		<br>
 	</body>
 </html>
