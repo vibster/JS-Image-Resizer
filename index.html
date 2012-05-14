@@ -1,75 +1,75 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Resize RGBA data from a BMP image and post-manipulation</title>
+		<title>Resize.js Demo</title>
 		<script src="./resize.js"></script>
-	</head>
-	<body onload="onloadHandle();">
-		<span id="wait">Please wait while the demo downloads html5_logo.bmp...</span>
-		<canvas id ="test" width="500" height="500"></canvas>
+		<style>
+		</style>
 		<script>
-			var resizeObj = new Resize(1200, 1689, 500, 500, true, true);
-			try {
-				var framebuffer = new Int32Array(1689 * 1200 * 4);
+			var down_context2d = null;
+			var down_resize = null;
+			var up_context2d = null;
+			var up_resize = null;
+			function process_data() {
+				var elementHandle = document.createElement("canvas");
+				var contextHandle = elementHandle.getContext("2d");
+				var source = document.getElementById("source");
+				elementHandle.width = 500;
+				elementHandle.height = 500;
+				contextHandle.drawImage(source, 0, 0, source.width, source.height, 0, 0, source.width, source.height);
+				var dataToScale = contextHandle.getImageData(0, 0, source.width, source.height).data;
+				//down_context2d
+				elementHandle = document.getElementById("down_context2d");
+				contextHandle = elementHandle.getContext("2d");
+				elementHandle.width = 150;
+				elementHandle.height = 150;
+				contextHandle.drawImage(source, 0, 0, source.width, source.height, 0, 0, 150, 150);
+				//down_resize
+				elementHandle = document.getElementById("down_resize");
+				contextHandle = elementHandle.getContext("2d");
+				elementHandle.width = 150;
+				elementHandle.height = 150;
+				var resized = new Resize(source.width, source.height, 150, 150, true, true)
+				updateCanvas(contextHandle, contextHandle.createImageData(150, 150), resized.resize(dataToScale));
+				//up_context2d
+				var elementHandle = document.getElementById("up_context2d");
+				var contextHandle = elementHandle.getContext("2d");
+				elementHandle.width = 1000;
+				elementHandle.height = 1000;
+				contextHandle.drawImage(source, 0, 0, source.width, source.height, 0, 0, 1000, 1000);
+				//up_resize
+				elementHandle = document.getElementById("up_resize");
+				contextHandle = elementHandle.getContext("2d");
+				elementHandle.width = 1000;
+				elementHandle.height = 1000;
+				resized = new Resize(source.width, source.height, 1000, 1000, true, true)
+				updateCanvas(contextHandle, contextHandle.createImageData(1000, 1000), resized.resize(dataToScale));
 			}
-			catch (error) {
-				var framebuffer = [];
-			}
-			function decodeBMP() {
-				if (ajaxReq.readyState >= 4 && ajaxReq.responseText.length) {
-					document.getElementById("wait").style.display = "none";
-					var data = ajaxReq.responseText;
-					var dataPos = data.length - 1689 * 1200 * 3;
-					var yAdj = 1688 * 4800;
-					for (var y = 0; yAdj >= 0; yAdj -= 4800) {
-						for (var x = 0; x < 4800;) {
-							framebuffer[yAdj + 2 + (x++)] = data.charCodeAt(dataPos++) & 0xFF;
-							framebuffer[yAdj + (x++)] = data.charCodeAt(dataPos++) & 0xFF;
-							framebuffer[yAdj - 2 + (x++)] = data.charCodeAt(dataPos++) & 0xFF;
-							framebuffer[yAdj + (x++)] = 0xFF;
-						}
-					}
-					framebuffer = resizeObj.resize(framebuffer);
-					updateCanvas();
-					setInterval(colorifyImage, 30);
-				}
-			}
-			function updateCanvas() {
-				var data = imageData.data;
+			function updateCanvas(contextHandle, imageBuffer, frameBuffer) {
+				var data = imageBuffer.data;
 				var length = data.length;
 				for (var x = 0; x < length; ++x) {
-					data[x] = framebuffer[x] & 0xFF;
+					data[x] = frameBuffer[x] & 0xFF;
 				}
-				contextHandle.putImageData(imageData, 0, 0);
-			}
-			function colorifyImage() {
-				var length = framebuffer.length;
-				for (var x = 0; x < length; x += 4) {
-					if ((framebuffer[x] & framebuffer[x + 1] & framebuffer[x + 2]) >= 0xFC || framebuffer[x + 3] == 0xFE) {
-						framebuffer[x] = Math.round(Math.random() * 0xFF);
-						framebuffer[x + 1] = Math.round(Math.random() * 0xFF);
-						framebuffer[x + 2] = Math.round(Math.random() * 0xFF);
-						framebuffer[x + 3] = 0xFE;
-					}
-				}
-				updateCanvas();
-			}
-			function onloadHandle() {
-				ajaxReq = new XMLHttpRequest();
-				ajaxReq.onreadystatechange = decodeBMP;
-				ajaxReq.open("GET", "./html5_logo.bmp", true);
-				ajaxReq.setRequestHeader("Content-Type", "application/octet-stream");
-				try {
-					ajaxReq.overrideMimeType('text/plain; charset=x-user-defined'); 
-				}
-				catch (error) {
-					//No support...
-				}
-				ajaxReq.send();
-				canvasHandle = document.getElementById("test");
-				contextHandle = canvasHandle.getContext("2d");
-				imageData = contextHandle.getImageData(0, 0, 500, 500);
+				contextHandle.putImageData(imageBuffer, 0, 0);
 			}
 		</script>
+	</head>
+	<body>
+		<h3>Original Image:</h3>
+		<img src="./flower.png" id="source" onload="process_data();">
+		<br>
+		<h3>Downscaling With Context2d:</h3>
+		<canvas id="down_context2d"></canvas>
+		<br>
+		<h3>Downscaling With Resize.js:</h3>
+		<canvas id="down_resize"></canvas>
+		<br>
+		<h3>Upscaling With Context2d:</h3>
+		<canvas id="up_context2d"></canvas>
+		<br>
+		<h3>Upscaling With Resize.js:</h3>
+		<canvas id="up_resize"></canvas>
+		<br>
 	</body>
 </html>
