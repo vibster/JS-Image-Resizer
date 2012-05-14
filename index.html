@@ -40,11 +40,11 @@
 				contextHandle = elementHandle.getContext("2d");
 				elementHandle.width = 50;
 				elementHandle.height = 50;
-				var resized = new Resize(source.width, source.height, 50, 50, true, true)
+				resized = new Resize(source.width, source.height, 50, 50, true, true)
 				updateCanvas(contextHandle, contextHandle.createImageData(50, 50), resized.resize(dataToScale));
 				//up_context2d
-				var elementHandle = document.getElementById("up_context2d");
-				var contextHandle = elementHandle.getContext("2d");
+				elementHandle = document.getElementById("up_context2d");
+				contextHandle = elementHandle.getContext("2d");
 				elementHandle.width = 1000;
 				elementHandle.height = 1000;
 				contextHandle.drawImage(source, 0, 0, source.width, source.height, 0, 0, 1000, 1000);
